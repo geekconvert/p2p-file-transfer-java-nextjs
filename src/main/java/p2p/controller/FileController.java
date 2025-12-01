@@ -23,27 +23,20 @@ public class FileController {
     private final String uploadDir;
     private final ExecutorService executorService;
 
-    /*
-    Create HTTP server - HttpServer.create(new InetSocketAddress(port), 0) creates a basic HTTP server bound to the specified port.
 
-    Set upload directory - System.getProperty("java.io.tmpdir") gets the system's temporary directory (e.g., tmp on macOS/Linux, C:\Temp on Windows), then appends /peerlink-uploads to create a dedicated folder for uploaded files.
-
-    Create upload directory if missing - Checks if the peerlink-uploads folder exists, and if not, creates it (including any parent directories with mkdirs()).
-
-    Register HTTP endpoints - Creates three routes:
-
-    /upload → handled by UploadHandler (receives file uploads)
-    /download → handled by DownloadHandler (retrieves files from peers)
-    / → handled by CORSHandler (handles CORS and catches unmatched routes)
-
-    Set thread pool executor - server.setExecutor(executorService) assigns the 10-thread executor pool to handle incoming HTTP requests concurrently, allowing the server to process multiple requests simultaneously.
-    */
     public FileController(int port) throws IOException {
         this.fileSharer = new FileSharer();
+
+        //Create HTTP server - HttpServer.create(new InetSocketAddress(port), 0) creates a basic HTTP server bound to the specified port.
         this.server = HttpServer.create(new InetSocketAddress(port), 0);
+
+        /*
+        Set upload directory - System.getProperty("java.io.tmpdir") gets the system's temporary directory (e.g., tmp on macOS/Linux, C:\Temp on Windows), then appends /peerlink-uploads to create a dedicated folder for uploaded files.
+        */
         this.uploadDir = System.getProperty("java.io.tmpdir") + File.separator + "peerlink-uploads";
         this.executorService = Executors.newFixedThreadPool(10);
         
+        //Create upload directory if missing - Checks if the peerlink-uploads folder exists, and if not, creates it (including any parent directories with mkdirs()).
         File uploadDirFile = new File(uploadDir);
         if (!uploadDirFile.exists()) {
             uploadDirFile.mkdirs();
@@ -52,8 +45,16 @@ public class FileController {
         server.createContext("/upload", new UploadHandler());
         server.createContext("/download", new DownloadHandler());
         server.createContext("/", new CORSHandler());
+        /*
+        Register HTTP endpoints - Creates three routes:
+
+        /upload → handled by UploadHandler (receives file uploads)
+        /download → handled by DownloadHandler (retrieves files from peers)
+        / → handled by CORSHandler (handles CORS and catches unmatched routes)
+        */
         
         server.setExecutor(executorService);
+        // Set thread pool executor - server.setExecutor(executorService) assigns the 10-thread executor pool to handle incoming HTTP requests concurrently, allowing the server to process multiple requests simultaneously.
     }
     
     public void start() {
@@ -67,71 +68,78 @@ public class FileController {
         System.out.println("API server stopped");
     }
     
-    /*
-    This CORSHandler handles Cross-Origin Resource Sharing (CORS) to allow your Next.js frontend (running on a different port) to communicate with your Java backend.
-
-    Set CORS headers - Adds headers to allow requests from any origin (*):
-
-    Access-Control-Allow-Origin: * - Permits requests from any domain
-    Access-Control-Allow-Methods - Specifies allowed HTTP methods (GET, POST, OPTIONS)
-    Access-Control-Allow-Headers - Specifies which headers the client can send
-
-    Handle preflight requests - Browsers send an OPTIONS request before actual requests to check if CORS is allowed:
-
-    If the request method is OPTIONS, respond with 204 No Content and exit
-    This tells the browser "CORS is permitted, proceed with the actual request"
-
-    Fallback for unmatched routes - For any other request to the root path /:
-    Return a 404 Not Found response
-    Write "Not Found" to the response body
-
-    Purpose: This handler is registered at the root context / to catch any requests that don't match /upload or /download routes. It ensures CORS headers are set and handles preflight checks, while returning 404 for any unmapped endpoints.
-
-    How it works:
-    When the UI sends a request to /upload, it goes directly to UploadHandler
-    UploadHandler adds the Access-Control-Allow-Origin: * header to the response
-    The browser receives this header and allows the cross-origin request
-
-    The CORSHandler at / only catches:
-    OPTIONS preflight requests to the root path
-    Any unmatched routes (returns 404)
-
-
-    A preflight request is an automatic OPTIONS request that browsers send before making certain cross-origin requests to check if the server allows it.
-
-    Browsers send preflight requests when your frontend (on http://localhost:3000) tries to make a request to your backend (on http://localhost:8080) that:
-
-    - Uses methods other than GET/POST (like PUT, DELETE)
-    - Sends custom headers (like Authorization)
-    - Uses POST with non-standard content types (like application/json)
-
-    The flow:
-    - Browser sends OPTIONS request first (preflight):
-        OPTIONS /upload HTTP/1.1
-        Origin: http://localhost:3000
-        Access-Control-Request-Method: POST
-        Access-Control-Request-Headers: Content-Type
-    - Server responds with CORS permissions:
-        HTTP/1.1 204 No Content
-        Access-Control-Allow-Origin: *
-        Access-Control-Allow-Methods: GET, POST, OPTIONS
-        Access-Control-Allow-Headers: Content-Type
-
-    In our code: The CORSHandler handles OPTIONS requests to / (root path) only. If the browser sends a preflight to /upload, your UploadHandler will reject it with "405 Method Not Allowed" because it only accepts POST, not OPTIONS.
-    */
     private class CORSHandler implements HttpHandler {
+
+        /*
+        This CORSHandler handles Cross-Origin Resource Sharing (CORS) to allow your Next.js frontend (running on a different port) to communicate with your Java backend.
+
+        Purpose: This handler is registered at the root context / to catch any requests that don't match /upload or /download routes. It ensures CORS headers are set and handles preflight checks, while returning 404 for any unmapped endpoints.
+
+        How it works:
+        - When the UI sends a request to /upload, it goes directly to UploadHandler
+        - UploadHandler adds the Access-Control-Allow-Origin: * header to the response
+        - The browser receives this header and allows the cross-origin request
+
+        The CORSHandler at / only catches:
+        - OPTIONS preflight requests to the root path
+        - Any unmatched routes (returns 404)
+
+        A preflight request is an automatic OPTIONS request that browsers send before making certain cross-origin requests to check if the server allows it.
+
+        Browsers send preflight requests when your frontend (on http://localhost:3000) tries to make a request to your backend (on http://localhost:8080) that:
+        - Uses methods other than GET/POST (like PUT, DELETE)
+        - Sends custom headers (like Authorization)
+        - Uses POST with non-standard content types (like application/json)
+
+        The flow:
+        - Browser sends OPTIONS request first (preflight):
+            OPTIONS /upload HTTP/1.1
+            Origin: http://localhost:3000
+            Access-Control-Request-Method: POST
+            Access-Control-Request-Headers: Content-Type
+        - Server responds with CORS permissions:
+            HTTP/1.1 204 No Content
+            Access-Control-Allow-Origin: *
+            Access-Control-Allow-Methods: GET, POST, OPTIONS
+            Access-Control-Allow-Headers: Content-Type
+
+        In our code: The CORSHandler handles OPTIONS requests to / (root path) only. If the browser sends a preflight to /upload, UploadHandler will reject it with "405 Method Not Allowed" because it only accepts POST, not OPTIONS.
+        */
         @Override
         public void handle(HttpExchange exchange) throws IOException {
             Headers headers = exchange.getResponseHeaders();
+
+            /*
+            Set CORS headers - Adds headers to allow requests from any origin (*):
+
+            Access-Control-Allow-Origin: * - Permits requests from any domain
+            Access-Control-Allow-Methods - Specifies allowed HTTP methods (GET, POST, OPTIONS)
+            Access-Control-Allow-Headers - Specifies which headers the client can send
+            */
             headers.add("Access-Control-Allow-Origin", "*");
             headers.add("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
             headers.add("Access-Control-Allow-Headers", "Content-Type,Authorization");
             
+            /*
+            Handle preflight requests - Browsers send an OPTIONS request before actual requests to check if CORS is allowed:
+            - If the request method is OPTIONS, respond with 204 No Content and exit
+            - This tells the browser "CORS is permitted, proceed with the actual request"
+
+            When you pass -1 as the response length:
+            - The server won't send a Content-Length header
+            - No response body is expected or sent
+            - The response consists only of the status line and headers
+            */
             if (exchange.getRequestMethod().equalsIgnoreCase("OPTIONS")) {
-                exchange.sendResponseHeaders(204, -1);
+                exchange.sendResponseHeaders(204, -1); //-1 means no response body will be sent
                 return;
             }
             
+            /*
+            Fallback for unmatched routes - For any other request to the root path /:
+            - Return a 404 Not Found response
+            - Write "Not Found" to the response body
+            */
             String response = "Not Found";
             exchange.sendResponseHeaders(404, response.getBytes().length);
             try (OutputStream os = exchange.getResponseBody()) {

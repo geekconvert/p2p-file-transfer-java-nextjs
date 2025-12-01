@@ -152,6 +152,25 @@ public class FileController {
         private final byte[] data;
         private final String boundary;
         
+        /*
+        example of the byte[] data:
+        
+        ------WebKitFormBoundaryABC123XYZ\r\n
+        Content-Disposition: form-data; name="file"; filename="document.pdf"\r\n
+        Content-Type: application/pdf\r\n
+        \r\n
+        %PDF-1.4
+        %âãÏÓ
+        1 0 obj
+        <<
+        /Type /Catalog
+        /Pages 2 0 R
+        >>
+        endobj
+        [... actual PDF binary data continues ...]
+        \r\n
+        ------WebKitFormBoundaryABC123XYZ--\r\n
+        */
         public MultipartParser(byte[] data, String boundary) {
             this.data = data;
             this.boundary = boundary;

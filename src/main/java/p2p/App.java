@@ -21,9 +21,27 @@ public class App {
                 System.out.println("Shutting down server...");
                 fileController.stop();
             }));
+            /*
+            Registers a shutdown hook - code that runs when the JVM is shutting down
+            Triggered when:
+            - User presses Ctrl+C
+            - System signals termination
+            - JVM exits normally
+
+            Ensures fileController.stop() is called to:
+            - Close the HTTP server
+            - Shutdown thread pool
+            - Clean up resources
+            */
             
             System.out.println("Press Enter to stop the server");
             System.in.read();
+            /*
+            - Blocks the main thread - waits for Enter key press
+            - Prevents the program from exiting immediately
+            - Keeps the server running in the background
+            - When user presses Enter → System.in.read() returns → program exits → shutdown hook executes
+            */
             
         } catch (IOException e) {
             System.err.println("Error starting server: " + e.getMessage());

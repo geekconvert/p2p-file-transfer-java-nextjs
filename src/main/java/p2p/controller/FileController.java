@@ -154,7 +154,7 @@ public class FileController {
         
         /*
         example of the byte[] data:
-        
+
         ------WebKitFormBoundaryABC123XYZ\r\n
         Content-Disposition: form-data; name="file"; filename="document.pdf"\r\n
         Content-Type: application/pdf\r\n
@@ -205,7 +205,7 @@ public class FileController {
                 if (headerEnd == -1) {
                     return null;
                 }
-                
+                 
                 int contentStart = headerEnd + headerEndMarker.length();
                 
                 byte[] boundaryBytes = ("\r\n--" + boundary + "--").getBytes();
@@ -241,6 +241,16 @@ public class FileController {
                 return i;
             }
             return -1;
+            /* 
+            This method searches for a byte sequence within a byte array and returns its starting position.
+
+            What continue outer; does:
+
+            - Exits the inner loop immediately
+            - Goes back to the outer loop
+            - Executes i++ (increments i)
+            - Starts the next iteration with the new value of i
+            */
         }
         
         public static class ParseResult {

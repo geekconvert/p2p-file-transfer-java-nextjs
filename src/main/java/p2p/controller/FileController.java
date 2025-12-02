@@ -273,25 +273,24 @@ public class FileController {
         @Override
         public void handle(HttpExchange exchange) throws IOException {
             Headers headers = exchange.getResponseHeaders();
-            //exchange.getResponseHeaders() doesn't send the response - it just prepares the headers that will be sent later. This retrieves a mutable Headers object that you can modify Nothing is sent to the client yet you're just building up the headers that will be sent
+            //exchange.getResponseHeaders() doesn't send the response - it just prepares the headers that will be sent later. This retrieves a mutable Headers object that you can modify. Nothing is sent to the client yet. you're just building up the headers that will be sent
             headers.add("Access-Control-Allow-Origin", "*");
             
             if (!exchange.getRequestMethod().equalsIgnoreCase("POST")) {
                 String response = "Method Not Allowed";
-                exchange.sendResponseHeaders(405, response.getBytes().length);
-                //This is when headers are actually sent to the client
+                exchange.sendResponseHeaders(405, response.getBytes().length); //This is when headers are actually sent to the client
+                
                 /*
                 This is try-with-resources syntax for automatic resource management. Here's what's happening: "exchange.getResponseBody()" returns an OutputStream that you can write to - it doesn't return existing content, it gives you a stream to send the response body to the client.
 
                 OutputStream os = exchange.getResponseBody()
-                This creates a connection to write data back to the client
-                Nothing is returned from the client - you're getting a stream to the client
-
+                - This creates a connection to write data back to the client
+                - Nothing is returned from the client - you're getting a stream to the client
 
                 os.write(response.getBytes())
-                Converts the string "Method Not Allowed" to bytes. Sends those bytes to the client as the response body
+                - Converts the string "Method Not Allowed" to bytes. Sends those bytes to the client as the response body
 
-                // try-with-resources automatically closes the stream. The stream is automatically closed and flushed. This completes the HTTP response
+                try-with-resources automatically closes the stream. The stream is automatically closed and flushed. This completes the HTTP response
                 */
                 try (OutputStream os = exchange.getResponseBody()) {
                     os.write(response.getBytes());

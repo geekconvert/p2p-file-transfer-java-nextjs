@@ -285,7 +285,6 @@ public class FileController {
 
                 OutputStream os = exchange.getResponseBody()
                 - This creates a connection to write data back to the client
-                - Nothing is returned from the client - you're getting a stream to the client
 
                 os.write(response.getBytes())
                 - Converts the string "Method Not Allowed" to bytes. Sends those bytes to the client as the response body
@@ -326,8 +325,8 @@ public class FileController {
             try {
                 /* 
                 This extracts the boundary string from the Content-Type header, which is used to separate different parts of the multipart form data.
-                contentType.substring(31) - returns something like: "----WebKitFormBoundary7MA4YWxkTrZu0gW"
 
+                contentType.substring() - returns something like: "----WebKitFormBoundary7MA4YWxkTrZu0gW"
                 boundary = "----WebKitFormBoundary7MA4YWxkTrZu0gW"
 
                 Why is this needed?: Multipart form data uses boundaries to separate file content from 
@@ -364,7 +363,6 @@ public class FileController {
 
                 requestData contains the raw bytes of the entire HTTP request body sent from your Next.js UI, which will then be parsed.
 
-
                 requestData contains both the multipart headers AND the file content:
                 ------WebKitFormBoundaryABC123
                 Content-Disposition: form-data; name="file"; filename="document.pdf"
@@ -379,7 +377,6 @@ public class FileController {
                 - Multipart headers - Content-Disposition, Content-Type
                 - File content - The actual binary data of the uploaded file
                 - Closing boundary - ------WebKitFormBoundaryABC123--
-
 
                 requestData does NOT contain the HTTP Content-Type header.
                 HTTP Headers:
@@ -399,9 +396,7 @@ public class FileController {
 
                 HTTP requests and responses both follow the same two-part structure. This is the HTTP protocol standard - all HTTP communication is split into headers (metadata) and body (actual content), separated by a blank line.
 
-
                 Content-Length includes the ENTIRE request body - not just the file, but also all the multipart formatting (boundaries, Content-Disposition, etc.).
-
 
                 Content-Length tells the server how many bytes to read from the network stream for the request body. It needs to include everything after the blank line that separates HTTP headers from the body - which includes all the multipart structure, not just the raw file data.
                 */
@@ -454,14 +449,11 @@ public class FileController {
                 - result.fileContent contains the pure file bytes (extracted by the parser, no multipart headers/boundaries)
                 - Writes all those bytes to the file on disk
 
-
                 // try-with-resources automatically closes the stream
                 - Ensures the file is properly closed and flushed
                 - Even if an error occurs, the file will be closed
 
-
                 The uploaded file is now saved to disk at the location specified by filePath, and this is the file that will be shared via P2P when another user requests it using the port number.
-
 
                 new FileOutputStream(filePath):
                 - If the file doesn't exist → Creates a new empty file at that path
